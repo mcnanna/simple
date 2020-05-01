@@ -1,5 +1,5 @@
 setup:
-    simple_dir : '/home/s1/smau/software/simple/simple'
+    simple_dir : '/Users/mcnanna/Research/simple/simple'
 
 output:
     results_dir : 'results_dir'
@@ -9,9 +9,36 @@ output:
 batch:
     jobs: 20 # <= 20 for DES cluster computers!
 
-survey: 'y3_gold_2_0' # parameter to change for runs across different data
+survey: 'y6_gold_1_1'
+#survey: 'y3_gold_2_0' # parameter to change for runs across different data
 #survey: 'panstarrs'
 #survey: 'bliss'
+
+y6_gold_1_1:
+    mode: 0 # 0: real, 1: real+sim, 2: candidates
+    sim_population:
+    sim_dir: 
+    nside: 32
+    datadir: '/Users/mcnanna/Research/far-out/datafiles'
+    isoname: 'Bressan2012' # Not actually configurable in current state
+    isosurvey: 'des' # Also not configureable in current state
+
+    basis_1: 'RA'
+    basis_2: 'DEC'
+
+    mag_max: 
+    mag_max_1: 
+    mag_max_2: 24.5
+    mag_max_3: 24.25
+    band_1: 'G'
+    band_2: 'R'
+    band_3: 'I'
+    mag: 'SOF_PSF_MAG_CORRECTED_{}'
+    mag_err: 'SOF_PSF_MAG_ERR_{}'
+    mag_dered: 'MAG_DERED_{}'
+
+    fracdet_gz: 'y6a1_griz_o.4096_t.32768_coverfoot_EQU.fits.gz'
+    fracdet: 'y6a1_griz_o.4096_t.32768_coverfoot_EQU.fits'
 
 y3_gold_2_0:
     mode : 1 # 0: real, 1: real+sim, 2: candidates

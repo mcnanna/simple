@@ -32,12 +32,18 @@ with open('config.yaml', 'r') as ymlfile:
     nside = cfg[survey]['nside']
     datadir = cfg[survey]['datadir']
     mag_max = cfg[survey]['mag_max']
+    if mag_max is None: # Need maxes for each individual band
+        mag_max_1 = cfg[survey]['mag_max_1']
+        mag_max_2 = cfg[survey]['mag_max_2']
+        mag_max_3 = cfg[survey]['mag_max_3']
+        mag_max = (mag_max_1, mag_max_2, mag_max_3)
 
     basis_1 = cfg[survey]['basis_1']
     basis_2 = cfg[survey]['basis_2']
 
     band_1 = cfg[survey]['band_1']
     band_2 = cfg[survey]['band_2']
+    band_3 = cfg[survey]['band_3']
     mag = cfg[survey]['mag']
     mag_err = cfg[survey]['mag_err']
     mag_dered = cfg[survey]['mag_dered']
@@ -63,10 +69,13 @@ with open('config.yaml', 'r') as ymlfile:
 # construct mags
 mag_1 = mag.format(band_1.upper())
 mag_2 = mag.format(band_2.upper())
+mag_3 = mag.format(band_3.upper())
 mag_err_1 = mag_err.format(band_1.upper())
 mag_err_2 = mag_err.format(band_2.upper())
+mag_err_3 = mag_err.format(band_3.upper())
 mag_dered_1 = mag_dered.format(band_1.upper())
 mag_dered_2 = mag_dered.format(band_2.upper())
+mag_dered_3 = mag_dered.format(band_3.upper())
 
 # main
 
@@ -135,6 +144,10 @@ if (len(data) == 0):
     exit()
 
 print('Applying cuts...')
+if survey == 'y6_gold_1_1':
+    color_cut = simple.filters.color_filter(survey, data)
+    data = data[color_cut]
+
 cut = simple.filters.star_filter(survey, data)
 cut_gal = simple.filters.galaxy_filter(survey, data)
 
@@ -154,7 +167,11 @@ else:
     print('No fracdet map specified ...')
     fracdet = None
 
-distance_modulus_search_array = np.arange(16., mag_max, 0.5)
+#search_inner_limit_modulus = 16.
+#search_outer_limit_modulus = mag_max
+search_inner_limit_modulus = 22.5 # ~315 kpc
+search_outer_limit_modulus = 27.5 # ~3150 kpc
+distance_modulus_search_array = np.arange(search_inner_limit_modulus, search_outer_limit_modulus+0.1, 0.5)
 
 ra_peak_array = []
 dec_peak_array = [] 
@@ -166,9 +183,12 @@ n_obs_peak_array = []
 n_obs_half_peak_array = []
 n_model_peak_array = []
 
+proj = ugali.utils.projector.Projector(ra_select, dec_select)
+x, y = proj.sphereToImage(data[basis_1], data[basis_2])
+
 if (mode == 0):
     for distance_modulus in distance_modulus_search_array:
-        ra_peaks, dec_peaks, r_peaks, sig_peaks, dist_moduli, n_obs_peaks, n_obs_half_peaks, n_model_peaks = simple.simple_utils.search_by_distance(nside, data, distance_modulus, pix_nside_select, ra_select, dec_select, mag_max, fracdet)
+        ra_peaks, dec_peaks, r_peaks, sig_peaks, dist_moduli, n_obs_peaks, n_obs_half_peaks, n_model_peaks = simple.simple_utils.search_by_distance(nside, data, distance_modulus, pix_nside_select, ra_select, dec_select, proj, x, y, fracdet)
         ra_peak_array.append(ra_peaks)
         dec_peak_array.append(dec_peaks)
         r_peak_array.append(r_peaks)
