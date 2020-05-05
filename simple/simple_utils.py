@@ -28,7 +28,7 @@ import isochrone
 ########################################################################
 
 with open('config.yaml', 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.full_load(ymlfile)
 
     survey = cfg['survey']
     nside   = cfg[survey]['nside']
@@ -57,6 +57,7 @@ with open('config.yaml', 'r') as ymlfile:
 
     band_1 = cfg[survey]['band_1']
     band_2 = cfg[survey]['band_2']
+    band_3 = cfg[survey]['band_3']
     mag = cfg[survey]['mag']
     mag_err = cfg[survey]['mag_err']
     mag_dered = cfg[survey]['mag_dered']
@@ -68,10 +69,13 @@ with open('config.yaml', 'r') as ymlfile:
 # construct mags
 mag_1 = mag.format(band_1.upper())
 mag_2 = mag.format(band_2.upper())
+mag_3 = mag.format(band_3.upper())
 mag_err_1 = mag_err.format(band_1.upper())
 mag_err_2 = mag_err.format(band_2.upper())
+mag_err_3 = mag_err.format(band_3.upper())
 mag_dered_1 = mag_dered.format(band_1.upper())
 mag_dered_2 = mag_dered.format(band_2.upper())
+mag_dered_3 = mag_dered.format(band_3.upper())
 
 # specify fits columns
 #COLS = [basis_1, basis_2, mag_1, mag_2, mag_err_1, mag_err_2, mag_dered_1, mag_dered_2,...]
@@ -127,6 +131,7 @@ def construct_real_data(pix_nside_neighbors):
         #data = ugali.utils.mlab.rec_append_field(data, ['MC_SOURCE_ID'], [0])
     
     return data
+
 
 def construct_sim_data(pix_nside_neighbors, mc_source_id):
     data_array = []
@@ -199,7 +204,7 @@ def cut_isochrone_path(g, r, g_err, r_err, isochrone, radius=0.1, return_all=Fal
     cut = np.logical_or(cut_1, cut_2)
 
     #mag_bins = np.arange(17., 24.1, 0.1)
-    mag_bins = np.arange(17., #mag_max+0.1, 0.1)
+    mag_bins = np.arange(17., mag_max+0.1, 0.1)
     mag_centers = 0.5 * (mag_bins[1:] + mag_bins[0:-1])
     magerr = np.tile(0., len(mag_centers))
     for ii in range(0, len(mag_bins) - 1):
@@ -213,14 +218,20 @@ def cut_isochrone_path(g, r, g_err, r_err, isochrone, radius=0.1, return_all=Fal
 
 ########################################################################
 
-def compute_char_density(nside, data, ra_select, dec_select, x, y, fracdet=None):
+def compute_char_density(nside, data, ra_select, dec_select, x, y, magnitude_threshold=mag_max, fracdet=None):
     """
     Compute the characteristic density of a region
     Convlve the field and find overdensity peaks
     """
 
-    # This is already done by the quality cuts
-    #cut_magnitude_threshold = (data[mag_1] < magnitude_threshold)
+    if 'gold' in survey or survey == 'bliss':
+        cut_magnitude_threshold = np.tile(True, len(data))
+    else:
+        # This is already done by the quality cuts if magnitude_threshold = mag_max
+        magnitude_threshold = mag_max
+        cut_magnitude_threshold = (data[mag_1] < magnitude_threshold)
+
+    x, y = x[cut_magnitude_threshold], y[cut_magnitude_threshold]
 
     delta_x_coverage = 0.1 #= 6./60.
     area_coverage = (delta_x_coverage)**2
@@ -256,8 +267,8 @@ def compute_char_density(nside, data, ra_select, dec_select, x, y, fracdet=None)
         # mcnanna: so I commented it out
         #subpix_region_array = subpix_region_array[fracdet[subpix_region_array] > 0.99]
         #subpix = ugali.utils.healpix.angToPix(nside_fracdet, 
-        #                                      data[basis_1], 
-        #                                      data[basis_2]) # mag threshold removed, see above
+        #                                      data[basis_1][cut_magnitude_threshold], 
+        #                                      data[basis_2][cut_magnitude_threshold])
         #characteristic_density_fracdet = float(np.sum(np.in1d(subpix, subpix_region_array))) \
         #                                 / (hp.nside2pixarea(nside_fracdet, degrees=True) * len(subpix_region_array)) # deg^-2
         #print('Characteristic density fracdet = {:0.1f} deg^-2').format(characteristic_density_fracdet)
@@ -269,7 +280,7 @@ def compute_char_density(nside, data, ra_select, dec_select, x, y, fracdet=None)
 
     return characteristic_density
 
-def compute_local_char_density(nside, data, characteristic_density, ra_select, dec_select, x_peak, y_peak, angsep_peak, ra_peak, dec_peak, magnitude_threshold=mag_max, proj, x, y, fracdet=None):
+def compute_local_char_density(nside, data, characteristic_density, ra_select, dec_select, x_peak, y_peak, angsep_peak, ra_peak, dec_peak, proj, x, y, magnitude_threshold=mag_max, fracdet=None):
     """
     Compute the local characteristic density of a region
     """
@@ -283,7 +294,7 @@ def compute_local_char_density(nside, data, characteristic_density, ra_select, d
         magnitude_threshold = mag_max # make this function argument?
         cut_magnitude_threshold = (data[mag_dered_1] < magnitude_threshold)
 
-    x, y = x[cut_magnitude_threshold], y[cut_magnitude_threshold]) # Trimmed magnitude range for hotspot finding
+    x, y = x[cut_magnitude_threshold], y[cut_magnitude_threshold] # Trimmed magnitude range for hotspot finding
     #x_full, y_full = proj.sphereToImage(data[basis_1], data[basis_2]) # If we want to use full magnitude range for significance evaluation
 
     # If fracdet map is available, use that information to either compute local density,
@@ -354,7 +365,7 @@ def compute_local_char_density(nside, data, characteristic_density, ra_select, d
 
 ########################################################################
 
-def find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_select, ra_select, dec_select, magnitude_theshold=mag_max, proj, x, y, fracdet=None):
+def find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_select, ra_select, dec_select, proj, x, y, magnitude_threshold=mag_max, fracdet=None):
     """
     Convolve field to find characteristic density and peaks within the selected pixel
     """
@@ -363,7 +374,7 @@ def find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_
     
     if 'gold' in survey or survey == 'bliss':
         # mag_dered = mag
-        cut
+        cut_magnitude_threshold = np.tile(True, len(data[mag_dered_1]))
     else:
         cut_magnitude_threshold = (data[mag_dered_1] < magnitude_threshold)
 
@@ -380,42 +391,39 @@ def find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_
 
     yy, xx = np.meshgrid(centers, centers)
     xxflat, yyflat = xx.flatten(), yy.flatten()
-    #rara, decdec = proj.imageToSphere(xxflat, yyflat)
-    #cutcut = (ugali.utils.healpix.angToPix(nside, rara, decdec) == pix_nside_select).reshape(xx.shape)
+    
+    rara, decdec = proj.imageToSphere(xxflat, yyflat)
+    cutcut = (ugali.utils.healpix.angToPix(nside, rara, decdec) == pix_nside_select).reshape(xx.shape)
 
-    factor_array = np.arange(1., 5., 0.05)
+    factor_array = np.arange(1., 5.+1e-10, 0.05)
     #threshold_density = 5 * characteristic_density * area
     for factor in factor_array:
         threshold_density = area * characteristic_density * factor
-        h_region, n_region = scipy.ndimage.measurements.label(h_g > threshold_density)
-        #print 'factor', factor, n_region, n_region < 10
+        h_region, n_region = scipy.ndimage.measurements.label(h_g * cutcut > threshold_density)
+        #print 'factor', factor, n_region
 
-        x_peak_array = []
-        y_peak_array = []
-        ra_peak_array = []
-        dec_peak_array = []
-        for index in range(1, n_region + 1): # loop over peaks
-            index_peak = np.argmax(h_g * (h_region == index)) # If this step is slow, this approach may be slower
-            x_peak, y_peak = xxflat[index_peak], yyflat[index_peak]
-            ra_peak, dec_peak = proj.imageToSphere(x_peak, y_peak)
-            x_peak_array.append(x_peak), y_peak_array.append(y_peak)
-            ra_peak_array.append(ra_peak), dec_peak_array.append(dec_peak)
-            
-        sel_central_healpix = (ugali.utils.angToPix(nside, ra_peak_array, dec_peak_array) == pix_nside_select)
-
-        if np.count_nonzero(sel_central_healpix) < 10:
+        if n_region < 10:
             break
-
-    x_peak_array = np.array(x_peak_array)[sel_central_healpix]
-    y_peak_array = np.array(y_peak_array)[sel_central_healpix]
-    angsep_peak_array = []
-    for j in range(len(x_peak_array)):
-        x_peak, y_peak = x_peak_array[j], y_peak_array[j]
-        angsep_peak = np.sqrt((x - x_peak)**2 + (y - y_peak)**2) # Impose magnitude threshold
-        angsep_peak_array.append(angsep_peak)
-    ra_peak_array = np.array(ra_peak_array)[sel_central_healpix]
-    dec_peak_array = np.array(dec_peak_array)[sel_central_healpix]
     
+    h_region = np.ma.array(h_region, mask=(h_region < 1))
+    x_peak_array = []
+    y_peak_array = []
+    ra_peak_array = []
+    dec_peak_array = []
+    angsep_peak_array = []
+    for index in range(1, n_region + 1):
+        index_peak = np.argmax(h_g * (h_region == index))
+        x_peak, y_peak = xxflat[index_peak], yyflat[index_peak]
+        ra_peak, dec_peak = proj.imageToSphere(x_peak, y_peak)
+        #angsep_peak = np.sqrt((x_full - x_peak)**2 + (y_full - y_peak)**2) # Use full magnitude range, NOT TESTED!!!
+        angsep_peak = np.sqrt((x - x_peak)**2 + (y - y_peak)**2) # Impose magnitude threshold
+
+        x_peak_array.append(x_peak)
+        y_peak_array.append(y_peak)
+        ra_peak_array.append(ra_peak)
+        dec_peak_array.append(dec_peak)
+        angsep_peak_array.append(angsep_peak)
+
     return x_peak_array, y_peak_array, angsep_peak_array, ra_peak_array, dec_peak_array
 
 ########################################################################
@@ -432,7 +440,7 @@ def fit_aperture(proj, distance_modulus, characteristic_density_local, x_peak, y
     n_obs_half_peak_array = []
     n_model_peak_array = []
             
-    size_array = np.concatenate((np.arange(0.001, 0.01, 0.001), np.arange(0.01, 0.3, 0.01))
+    size_array = np.concatenate((np.arange(0.001, 0.01, 0.001), np.arange(0.01, 0.3, 0.01)))
     sig_array = np.tile(0., len(size_array))
     
     size_array_zero = np.concatenate([[0.], size_array])
@@ -470,7 +478,7 @@ def fit_aperture(proj, distance_modulus, characteristic_density_local, x_peak, y
 ########################################################################
 
 # mode = 0
-def search_by_distance(nside, data, distance_modulus, pix_nside_select, ra_select, dec_select, magnitude_threshold=mag_max, proj, x, y, fracdet=None):
+def search_by_distance(nside, data, distance_modulus, pix_nside_select, ra_select, dec_select, proj, x, y, magnitude_threshold=mag_max, fracdet=None):
     """
     Idea: 
     Send a data extension that goes to faint magnitudes, e.g., g < 24.
@@ -492,6 +500,7 @@ def search_by_distance(nside, data, distance_modulus, pix_nside_select, ra_selec
     cut_ri = iso.cut_separation('r', 'i', data[mag_2], data[mag_3], data[mag_err_2], data[mag_err_3], radius=0.1)
     cut = cut_gr & cut_ri
     data = data[cut]
+    x, y = x[cut], y[cut]
 
     print('{} objects left after isochrone cut...').format(len(data))
 
@@ -499,7 +508,7 @@ def search_by_distance(nside, data, distance_modulus, pix_nside_select, ra_selec
         return [], [], [], [], [], [], [], []
 
     # Compute characteristic density at this distance
-    characteristic_density = compute_char_density(nside, data, ra_select, dec_select, x, y, fracdet)
+    characteristic_density = compute_char_density(nside, data, ra_select, dec_select, x, y, fracdet=fracdet)
 
     ra_peak_array = []
     dec_peak_array = []
@@ -510,10 +519,10 @@ def search_by_distance(nside, data, distance_modulus, pix_nside_select, ra_selec
     n_obs_half_peak_array = []
     n_model_peak_array = []
 
-    x_peak_array, y_peak_array, angsep_peak_array, ra_peak_array, dec_peak_array = find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_select, ra_select, dec_select, magnitude_threshold, proj, x, y, fracdet)
+    x_peak_array, y_peak_array, angsep_peak_array, ra_peak_array, dec_peak_array = find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_select, ra_select, dec_select, proj, x, y, fracdet=fracdet)
 
-    for x_peak, y_peak, angsep_peak, ra_peak, dec_peak in itertools.izip(x_peak_array, y_peak_array, angsep_peak_array, ra_peak, dec_peak):
-        characteristic_density_local = compute_local_char_density(nside, data, characteristic_density, ra_select, dec_select, x_peak, y_peak, angsep_peak, magnitude_threshold, proj, x, y, fracdet)
+    for x_peak, y_peak, angsep_peak, ra_peak, dec_peak in itertools.izip(x_peak_array, y_peak_array, angsep_peak_array, ra_peak_array, dec_peak_array):
+        characteristic_density_local = compute_local_char_density(nside, data, characteristic_density, ra_select, dec_select, x_peak, y_peak, angsep_peak, ra_peak, dec_peak, proj, x, y, fracdet=fracdet)
         # Aperture fitting
         print('Fitting aperture to hotspot...')
         r_peaks, sig_peaks, distance_moduli, n_obs_peaks, n_obs_half_peaks, n_model_peaks = fit_aperture(proj, distance_modulus, characteristic_density_local, x_peak, y_peak, angsep_peak, ra_peak, dec_peak)

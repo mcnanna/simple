@@ -12,9 +12,8 @@ class Isochrone(Bressan2012):
         age = 10.
         metal_z = 0.0001
         super(Isochrone, self).__init__(survey='des', age=age, z=metal_z, distance_modulus=distance_modulus) # Default bands being g and r should be ok...
-        delattr(self, 'mag') # I will be overwriting mag to a function
 
-    def mag(self, band):
+    def apparent_mag(self, band):
         return self.data[band]+self.distance_modulus
 
     def simulate(self, abs_mag, distance_modulus=None, **kwargs):
@@ -36,9 +35,9 @@ class Isochrone(Bressan2012):
         if distance_modulus is None: distance_modulus = self.distance_modulus
         # Total number of stars in system
         n = int(round(stellar_mass / self.stellar_mass()))
-        f_g = scipy.interpolate.interp1d(self.mass_init, self.mag('g'))
-        f_r = scipy.interpolate.interp1d(self.mass_init, self.mag('r'))
-        f_i = scipy.interpolate.interp1d(self.mass_init, self.mag('i'))
+        f_g = scipy.interpolate.interp1d(self.mass_init, self.apparent_mag('g'))
+        f_r = scipy.interpolate.interp1d(self.mass_init, self.apparent_mag('r'))
+        f_i = scipy.interpolate.interp1d(self.mass_init, self.apparent_mag('i'))
         mass_init_sample = self.imf.sample(n, np.min(self.mass_init), np.max(self.mass_init), **kwargs)
         mag_g_sample, mag_r_sample, mag_i_sample = f_g(mass_init_sample), f_r(mass_init_sample), f_i(mass_init_sample) 
         return mag_g_sample, mag_r_sample, mag_i_sample
@@ -78,9 +77,9 @@ class Isochrone(Bressan2012):
 
         mass_init = self.mass_init[select]
         mass_act = self.mass_act[select]
-        mag_g = self.mag('g')[select]
-        mag_r = self.mag('r')[select]
-        mag_i = self.mag('i')[select]
+        mag_g = self.apparent_mag('g')[select]
+        mag_r = self.apparent_mag('r')[select]
+        mag_i = self.apparent_mag('i')[select]
         
         # ADW: Assume that the isochrones are pre-sorted by mass_init
         # This avoids some numerical instability from points that have the same
@@ -202,8 +201,8 @@ class Isochrone(Bressan2012):
             if not np.any(sel):
                 continue
 
-            iso_mag_1 = self.mag(band1)[sel][::-1]
-            iso_mag_2 = self.mag(band2)[sel][::-1]
+            iso_mag_1 = self.apparent_mag(band1)[sel][::-1]
+            iso_mag_2 = self.apparent_mag(band2)[sel][::-1]
             # Not positive why they're reversed, maybe it makes the interpolation better
     
             # Cut one way...

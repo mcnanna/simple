@@ -26,7 +26,7 @@ import simple.simple_utils
 ###########################################################
 
 with open('config.yaml', 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.full_load(ymlfile)
 
     survey = cfg['survey']
     nside = cfg[survey]['nside']
@@ -188,7 +188,7 @@ x, y = proj.sphereToImage(data[basis_1], data[basis_2])
 
 if (mode == 0):
     for distance_modulus in distance_modulus_search_array:
-        ra_peaks, dec_peaks, r_peaks, sig_peaks, dist_moduli, n_obs_peaks, n_obs_half_peaks, n_model_peaks = simple.simple_utils.search_by_distance(nside, data, distance_modulus, pix_nside_select, ra_select, dec_select, proj, x, y, fracdet)
+        ra_peaks, dec_peaks, r_peaks, sig_peaks, dist_moduli, n_obs_peaks, n_obs_half_peaks, n_model_peaks = simple.simple_utils.search_by_distance(nside, data, distance_modulus, pix_nside_select, ra_select, dec_select, proj, x, y, fracdet=fracdet)
         ra_peak_array.append(ra_peaks)
         dec_peak_array.append(dec_peaks)
         r_peak_array.append(r_peaks)

@@ -11,7 +11,7 @@ import numpy.lib.recfunctions
 #import ugali.utils.mlab
 
 with open('config.yaml', 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.full_load(ymlfile)
 
     survey = cfg['survey']
 
@@ -28,6 +28,7 @@ with open('config.yaml', 'r') as ymlfile:
 
     band_1 = cfg[survey]['band_1']
     band_2 = cfg[survey]['band_2']
+    band_3 = cfg[survey]['band_3']
     mag = cfg[survey]['mag']
     mag_err = cfg[survey]['mag_err']
     mag_dered = cfg[survey]['mag_dered']
@@ -38,7 +39,7 @@ mag_2 = mag.format(band_2.upper())
 mag_3 = mag.format(band_3.upper())
 mag_err_1 = mag_err.format(band_1.upper())
 mag_err_2 = mag_err.format(band_2.upper())
-mag_err_3 = mag_err.format(band_3_upper())
+mag_err_3 = mag_err.format(band_3.upper())
 mag_dered_1 = mag_dered.format(band_1.upper())
 mag_dered_2 = mag_dered.format(band_2.upper())
 mag_dered_3 = mag_dered.format(band_3.upper())

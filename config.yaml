@@ -19,7 +19,7 @@ y6_gold_1_1:
     sim_population:
     sim_dir: 
     nside: 32
-    datadir: '/Users/mcnanna/Research/far-out/datafiles'
+    datadir: '/Users/mcnanna/Research/y6/far-out/datafiles'
     isoname: 'Bressan2012' # Not actually configurable in current state
     isosurvey: 'des' # Also not configureable in current state
 
@@ -39,6 +39,8 @@ y6_gold_1_1:
 
     fracdet_gz: 'y6a1_griz_o.4096_t.32768_coverfoot_EQU.fits.gz'
     fracdet: 'y6a1_griz_o.4096_t.32768_coverfoot_EQU.fits'
+
+    candidate_list: 'testout.npy'
 
 y3_gold_2_0:
     mode : 1 # 0: real, 1: real+sim, 2: candidates
