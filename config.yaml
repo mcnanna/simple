@@ -33,7 +33,8 @@ y6_gold_1_1:
     band_1: 'G'
     band_2: 'R'
     band_3: 'I'
-    mag: 'SOF_PSF_MAG_CORRECTED_{}'
+    #mag: 'SOF_PSF_MAG_CORRECTED_{}'
+    mag: 'SOF_PSF_MAG_{}'
     mag_err: 'SOF_PSF_MAG_ERR_{}'
     mag_dered: 'MAG_DERED_{}'
 

@@ -25,6 +25,8 @@ import simple.simple_utils
 
 ###########################################################
 
+raw_input('CHANGE MAG IN CONFIG FILE BACK TO _CORRECTED MAG FOR REAL SEARCH!!!')
+
 with open('config.yaml', 'r') as ymlfile:
     cfg = yaml.full_load(ymlfile)
 
@@ -110,7 +112,8 @@ print('Healpixels: {}'.format(pix_nside_neighbors))
 
 # Construct data
 #data = simple_utils.construct_modal_data(mode, pix_nside_neighbors, mc_source_id)
-data = simple.simple_utils.construct_real_data(pix_nside_neighbors)
+data = simple.simple_utils.construct_test_data(pix_nside_neighbors)
+#data = simple.simple_utils.construct_real_data(pix_nside_neighbors)
 
 print('MC_SOURCE_ID = {}'.format(mc_source_id))
 if (mode == 0):
