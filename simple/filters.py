@@ -173,7 +173,7 @@ def dered_mag(survey, data):
     """Return the data with an added flag for dereddened (extinction
        corrected) magnitude"""
     if survey == 'y6_gold_1_1':
-        data = numpy.lib.recfunctions.append_fields(data, [mag_dered_1, mag_dered_2], [data[mag_1], data[mag_2]], usemask=False, asrecarray=True)
+        data = numpy.lib.recfunctions.append_fields(data, [mag_dered_1, mag_dered_2, mag_dered_3], [data[mag_1], data[mag_2], data[mag_3]], usemask=False, asrecarray=True)
     if survey == 'y3_gold_2_0':
         #data = mlab.rec_append_fields(data, [mag_g, mag_r], [data['SOF_PSF_MAG_CORRECTED_G'], data['SOF_PSF_MAG_CORRECTED_R']])
         data = numpy.lib.recfunctions.append_fields(data, [mag_dered_1, mag_dered_2], [data[mag_1], data[mag_2]], usemask=False, asrecarray=True)
