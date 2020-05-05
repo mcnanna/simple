@@ -79,7 +79,7 @@ for candidate in candidate_list:
         command = 'python {}/plotting/make_plot.py {:0.2f} {:0.2f} {:0.2f} {:0.2f} {:0.2f} {:0.4f}'.format(simple_dir, ra, dec, mod, sig, mc_source_id, field_density)
     else:
         command = 'python {}/plotting/make_plot.py {:0.2f} {:0.2f} {:0.2f} {:0.2f} {:0.2f}'.format(simple_dir, ra, dec, mod, sig, mc_source_id)
-    command_queue = batch + command
+    command_queue = command
 
     #print(command)
     #os.system(command)
