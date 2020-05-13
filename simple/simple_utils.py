@@ -118,7 +118,9 @@ def construct_real_data(pix_nside_neighbors):
             #reader = pyfits.open(infile)
             #data_array.append(reader[1].data)
             #reader.close()
-            data_array.append(fits.read(infile)) # add COLS=??? to speed up IO; use yaml
+
+            cols = [basis_1, basis_2, mag_1, mag_2, mag_3, mag_err_1, mag_err_2, mag_err_3, 'EXT_SOF']
+            data_array.append(fits.read(infile, columns=cols)) # add COLS=??? to speed up IO; use yaml
     data = np.concatenate(data_array)
 
     # Guarantee data has MC_SOURCE_ID
@@ -133,7 +135,7 @@ def construct_real_data(pix_nside_neighbors):
     return data
 
 def construct_test_data(pix_nside_neighbors):
-    data = fits.read('{}/y6_gold_1_1_patch.fits'.format(datadir))
+    data = fits.read('{}/y6_gold_1_1_patch_simsat.fits'.format(datadir))
 
     # Guarantee data has MC_SOURCE_ID
     try:
@@ -406,29 +408,30 @@ def find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_
     yy, xx = np.meshgrid(centers, centers)
     xxflat, yyflat = xx.flatten(), yy.flatten()
     
-    mode = 'old'
-    if mode == 'old':
-        rara, decdec = proj.imageToSphere(xxflat, yyflat)
-        cutcut = (ugali.utils.healpix.angToPix(nside, rara, decdec) == pix_nside_select).reshape(xx.shape)
+    version = 'old'
+    if version == 'old':
+        #rara, decdec = proj.imageToSphere(xxflat, yyflat)
+        #cutcut = (ugali.utils.healpix.angToPix(nside, rara, decdec) == pix_nside_select).reshape(xx.shape)
+        cutcut = np.load('{}/cutcut_arrays/cutcut_array_{}.npz'.format(datadir, pix_nside_select))['arr_0']
 
     factor_array = np.arange(1., 5.+1e-10, 0.05)
     #threshold_density = 5 * characteristic_density * area
     for factor in factor_array:
         threshold_density = area * characteristic_density * factor
-        if mode == 'old':
+        if version == 'old':
             h_region, n_region = scipy.ndimage.measurements.label(h_g * cutcut > threshold_density)
-        elif mode == 'new':
+        elif version == 'new':
             h_region, n_region = scipy.ndimage.measurements.label(h_g > threshold_density)
         print 'factor', factor, n_region
 
-        if mode == 'old':
+        if version == 'old':
             if n_region < 10:
                 break
-        #elif mode == 'new':
+        #elif version == 'new':
         #    if n_region < 10 * (16**2/hp.nside2pixarea(nside, degrees=True)):
         #        break
 
-        elif mode == 'new':
+        elif version == 'new':
             h_region = np.ma.array(h_region, mask=(h_region < 1))
             x_peak_array = []
             y_peak_array = []
@@ -446,7 +449,7 @@ def find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_
             if np.count_nonzero(sel_central_healpix) < 10:
                 break
     
-    if mode == 'old':
+    if version == 'old':
         h_region = np.ma.array(h_region, mask=(h_region < 1))
         x_peak_array = []
         y_peak_array = []
@@ -466,7 +469,7 @@ def find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_
             dec_peak_array.append(dec_peak)
             angsep_peak_array.append(angsep_peak)
 
-    elif mode == 'new':
+    elif version == 'new':
         x_peak_array = np.array(x_peak_array)[sel_central_healpix]
         y_peak_array = np.array(y_peak_array)[sel_central_healpix]
         angsep_peak_array = []
@@ -572,11 +575,7 @@ def search_by_distance(nside, data, distance_modulus, pix_nside_select, ra_selec
     n_obs_half_peak_array = []
     n_model_peak_array = []
 
-    import time
-    start = time.time()
     x_peak_array, y_peak_array, angsep_peak_array, ra_peak_array, dec_peak_array = find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_select, ra_select, dec_select, proj, x, y, fracdet=fracdet)
-    end = time.time()
-    print 'time: {}'.format(end-start)
 
     for x_peak, y_peak, angsep_peak, ra_peak, dec_peak in itertools.izip(x_peak_array, y_peak_array, angsep_peak_array, ra_peak_array, dec_peak_array):
         characteristic_density_local = compute_local_char_density(nside, data, characteristic_density, ra_select, dec_select, x_peak, y_peak, angsep_peak, ra_peak, dec_peak, proj, x, y, fracdet=fracdet)

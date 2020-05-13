@@ -86,7 +86,6 @@ cmap_gray_mask.set_bad('white')
 
 def analysis(ra, dec, mod, mc_source_id):
     """Analyze a candidate"""
-
     pix_nside_select = ugali.utils.healpix.angToPix(nside, ra, dec)
     ra_select, dec_select = ugali.utils.healpix.pixToAng(nside, pix_nside_select)
     pix_nside_neighbors = np.concatenate([[pix_nside_select], healpy.get_all_neighbours(nside, pix_nside_select)])
@@ -106,7 +105,7 @@ def analysis(ra, dec, mod, mc_source_id):
 
     print('Loading data...')
     #data = simple.simple_utils.construct_modal_data(mode, pix_nside_neighbors, mc_source_id)
-    data = simple.simple_utils.construct_test_data(pix_nside_neighbors)
+    data = simple.simple_utils.construct_real_data(pix_nside_neighbors)
     quality_cut = simple.filters.quality_filter(survey, data)
     data = data[quality_cut]
     print('Found {} objects...').format(len(data))
@@ -122,7 +121,6 @@ def analysis(ra, dec, mod, mc_source_id):
     # g_radius estimate
     filter = simple.filters.star_filter(survey, data)
 
-    import pdb; pdb.set_trace()
     iso_filter_gr = iso.cut_separation('g', 'r', data[mag_dered_1], data[mag_dered_2], data[mag_err_1], data[mag_err_2], radius=0.1)
     iso_filter_ri = iso.cut_separation('r', 'i', data[mag_dered_2], data[mag_dered_3], data[mag_err_2], data[mag_err_3], radius=0.1) # Not used right now
 
@@ -310,7 +308,8 @@ def hess_plot(ax, ra, dec, data, iso, g_radius, nbhd):
     signal = np.ma.array(signal, mask=np.isnan(mask_abs)) # mask nan
 
     pc = ax.pcolormesh(xbins, ybins, signal, cmap=cmap_gray_mask)
-    ugali.utils.plotting.drawIsochrone(iso, lw=2, c='k', zorder=10, label='Isocrhone')
+    #ugali.utils.plotting.drawIsochrone(iso, lw=2, c='k', zorder=10, label='Isocrhone')
+    iso.draw('g', 'r', lw=2, c='k', zorder=10, label='Isochrone')
 
     ax.set_xlim(-0.5, 1.0)
     ax.set_ylim(max(mag_max), 16)

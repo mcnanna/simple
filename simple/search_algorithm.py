@@ -25,8 +25,6 @@ import simple.simple_utils
 
 ###########################################################
 
-raw_input('CHANGE MAG IN CONFIG FILE BACK TO _CORRECTED MAG FOR REAL SEARCH!!!')
-
 with open('config.yaml', 'r') as ymlfile:
     cfg = yaml.full_load(ymlfile)
 
@@ -112,8 +110,7 @@ print('Healpixels: {}'.format(pix_nside_neighbors))
 
 # Construct data
 #data = simple_utils.construct_modal_data(mode, pix_nside_neighbors, mc_source_id)
-data = simple.simple_utils.construct_test_data(pix_nside_neighbors)
-#data = simple.simple_utils.construct_real_data(pix_nside_neighbors)
+data = simple.simple_utils.construct_real_data(pix_nside_neighbors)
 
 print('MC_SOURCE_ID = {}'.format(mc_source_id))
 if (mode == 0):
@@ -173,7 +170,7 @@ else:
 #search_inner_limit_modulus = 16.
 #search_outer_limit_modulus = mag_max
 search_inner_limit_modulus = 22.5 # ~315 kpc
-search_outer_limit_modulus = 27.5 # ~3150 kpc
+search_outer_limit_modulus = 26.5 # ~2 Mpc
 distance_modulus_search_array = np.arange(search_inner_limit_modulus, search_outer_limit_modulus+0.1, 0.5)
 
 ra_peak_array = []
