@@ -4,7 +4,7 @@ setup:
 output:
     results_dir : 'results_dir'
     log_dir     : 'log_dir'
-    save_dir    : 'save_dir'
+    save_dir    : 'save_dir_skimtest'
 
 batch:
     jobs: 20 # <= 20 for DES cluster computers!
@@ -19,7 +19,7 @@ y6_gold_1_1:
     sim_population:
     sim_dir: 
     nside: 32
-    datadir: '/Users/mcnanna/Research/y6/far-out/datafiles'
+    datadir: '/Users/mcnanna/Research/y6/far-out/datafiles/y6a1_skim'
     isoname: 'Bressan2012' # Not actually configurable in current state
     isosurvey: 'des' # Also not configureable in current state
 
@@ -33,14 +33,15 @@ y6_gold_1_1:
     band_1: 'G'
     band_2: 'R'
     band_3: 'I'
+    #mag: 'SOF_PSF_MAG_CORRECTED_{}'
     mag: 'SOF_PSF_MAG_CORRECTED_{}'
     mag_err: 'SOF_PSF_MAG_ERR_{}'
-    mag_dered: 'MAG_DERED_{}'
+    mag_dered: 'MAG_DERED_{}' 
 
     fracdet_gz: 'y6a1_griz_o.4096_t.32768_coverfoot_EQU.fits.gz'
     fracdet: 'y6a1_griz_o.4096_t.32768_coverfoot_EQU.fits'
 
-    candidate_list: 'testout.npy'
+    candidate_list: 'skimtest.npy'
 
 y3_gold_2_0:
     mode : 1 # 0: real, 1: real+sim, 2: candidates

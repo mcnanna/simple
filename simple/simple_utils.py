@@ -118,7 +118,9 @@ def construct_real_data(pix_nside_neighbors):
             #reader = pyfits.open(infile)
             #data_array.append(reader[1].data)
             #reader.close()
-            data_array.append(fits.read(infile)) # add COLS=??? to speed up IO; use yaml
+
+            cols = [basis_1, basis_2, mag_1, mag_2, mag_3, mag_err_1, mag_err_2, mag_err_3, 'EXT_SOF']
+            data_array.append(fits.read(infile, columns=cols)) # add COLS=??? to speed up IO; use yaml
     data = np.concatenate(data_array)
 
     # Guarantee data has MC_SOURCE_ID
@@ -130,6 +132,20 @@ def construct_real_data(pix_nside_neighbors):
         data = numpy.lib.recfunctions.append_fields(data, 'MC_SOURCE_ID', np.tile(0, len(data)), usemask=False, asrecarray=True)
         #data = ugali.utils.mlab.rec_append_field(data, ['MC_SOURCE_ID'], [0])
     
+    return data
+
+def construct_test_data(pix_nside_neighbors):
+    data = fits.read('{}/y6_gold_1_1_patch_simsat.fits'.format(datadir))
+
+    # Guarantee data has MC_SOURCE_ID
+    try:
+        data['MC_SOURCE_ID']
+    except:
+        # real data given MC_SOURCE_ID of 0
+        #data = mlab.rec_append_fields(data, ['MC_SOURCE_ID'], [0])
+        data = numpy.lib.recfunctions.append_fields(data, 'MC_SOURCE_ID', np.tile(0, len(data)), usemask=False, asrecarray=True)
+        #data = ugali.utils.mlab.rec_append_field(data, ['MC_SOURCE_ID'], [0])
+
     return data
 
 
@@ -392,38 +408,78 @@ def find_peaks(nside, data, characteristic_density, distance_modulus, pix_nside_
     yy, xx = np.meshgrid(centers, centers)
     xxflat, yyflat = xx.flatten(), yy.flatten()
     
-    rara, decdec = proj.imageToSphere(xxflat, yyflat)
-    cutcut = (ugali.utils.healpix.angToPix(nside, rara, decdec) == pix_nside_select).reshape(xx.shape)
+    version = 'old'
+    if version == 'old':
+        #rara, decdec = proj.imageToSphere(xxflat, yyflat)
+        #cutcut = (ugali.utils.healpix.angToPix(nside, rara, decdec) == pix_nside_select).reshape(xx.shape)
+        cutcut = np.load('{}/cutcut_arrays/cutcut_array_{}.npz'.format(datadir, pix_nside_select))['arr_0']
 
     factor_array = np.arange(1., 5.+1e-10, 0.05)
     #threshold_density = 5 * characteristic_density * area
     for factor in factor_array:
         threshold_density = area * characteristic_density * factor
-        h_region, n_region = scipy.ndimage.measurements.label(h_g * cutcut > threshold_density)
-        #print 'factor', factor, n_region
+        if version == 'old':
+            h_region, n_region = scipy.ndimage.measurements.label(h_g * cutcut > threshold_density)
+        elif version == 'new':
+            h_region, n_region = scipy.ndimage.measurements.label(h_g > threshold_density)
+        print 'factor', factor, n_region
 
-        if n_region < 10:
-            break
+        if version == 'old':
+            if n_region < 10:
+                break
+        #elif version == 'new':
+        #    if n_region < 10 * (16**2/hp.nside2pixarea(nside, degrees=True)):
+        #        break
+
+        elif version == 'new':
+            h_region = np.ma.array(h_region, mask=(h_region < 1))
+            x_peak_array = []
+            y_peak_array = []
+            ra_peak_array = []
+            dec_peak_array = []
+            for index in range(1, n_region + 1): # loop over peaks
+                index_peak = np.argmax(h_g[(h_region == index)]) # If this step is slow, this approach may be slower
+                x_peak, y_peak = xxflat[index_peak], yyflat[index_peak]
+                ra_peak, dec_peak = proj.imageToSphere(x_peak, y_peak)
+                x_peak_array.append(x_peak), y_peak_array.append(y_peak)
+                ra_peak_array.append(ra_peak), dec_peak_array.append(dec_peak)
+                
+            sel_central_healpix = (ugali.utils.healpix.angToPix(nside, np.array(ra_peak_array), np.array(dec_peak_array)) == pix_nside_select)
+            print np.count_nonzero(sel_central_healpix)
+            if np.count_nonzero(sel_central_healpix) < 10:
+                break
     
-    h_region = np.ma.array(h_region, mask=(h_region < 1))
-    x_peak_array = []
-    y_peak_array = []
-    ra_peak_array = []
-    dec_peak_array = []
-    angsep_peak_array = []
-    for index in range(1, n_region + 1):
-        index_peak = np.argmax(h_g * (h_region == index))
-        x_peak, y_peak = xxflat[index_peak], yyflat[index_peak]
-        ra_peak, dec_peak = proj.imageToSphere(x_peak, y_peak)
-        #angsep_peak = np.sqrt((x_full - x_peak)**2 + (y_full - y_peak)**2) # Use full magnitude range, NOT TESTED!!!
-        angsep_peak = np.sqrt((x - x_peak)**2 + (y - y_peak)**2) # Impose magnitude threshold
+    if version == 'old':
+        h_region = np.ma.array(h_region, mask=(h_region < 1))
+        x_peak_array = []
+        y_peak_array = []
+        ra_peak_array = []
+        dec_peak_array = []
+        angsep_peak_array = []
+        for index in range(1, n_region + 1):
+            index_peak = np.argmax(h_g * (h_region == index))
+            x_peak, y_peak = xxflat[index_peak], yyflat[index_peak]
+            ra_peak, dec_peak = proj.imageToSphere(x_peak, y_peak)
+            #angsep_peak = np.sqrt((x_full - x_peak)**2 + (y_full - y_peak)**2) # Use full magnitude range, NOT TESTED!!!
+            angsep_peak = np.sqrt((x - x_peak)**2 + (y - y_peak)**2) # Impose magnitude threshold
 
-        x_peak_array.append(x_peak)
-        y_peak_array.append(y_peak)
-        ra_peak_array.append(ra_peak)
-        dec_peak_array.append(dec_peak)
-        angsep_peak_array.append(angsep_peak)
+            x_peak_array.append(x_peak)
+            y_peak_array.append(y_peak)
+            ra_peak_array.append(ra_peak)
+            dec_peak_array.append(dec_peak)
+            angsep_peak_array.append(angsep_peak)
 
+    elif version == 'new':
+        x_peak_array = np.array(x_peak_array)[sel_central_healpix]
+        y_peak_array = np.array(y_peak_array)[sel_central_healpix]
+        angsep_peak_array = []
+        for j in range(len(x_peak_array)):
+            x_peak, y_peak = x_peak_array[j], y_peak_array[j]
+            angsep_peak = np.sqrt((x - x_peak)**2 + (y - y_peak)**2) # Impose magnitude threshold
+            angsep_peak_array.append(angsep_peak)
+        ra_peak_array = np.array(ra_peak_array)[sel_central_healpix]
+        dec_peak_array = np.array(dec_peak_array)[sel_central_healpix]
+        
     return x_peak_array, y_peak_array, angsep_peak_array, ra_peak_array, dec_peak_array
 
 ########################################################################

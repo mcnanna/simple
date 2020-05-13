@@ -170,7 +170,7 @@ else:
 #search_inner_limit_modulus = 16.
 #search_outer_limit_modulus = mag_max
 search_inner_limit_modulus = 22.5 # ~315 kpc
-search_outer_limit_modulus = 27.5 # ~3150 kpc
+search_outer_limit_modulus = 26.5 # ~2 Mpc
 distance_modulus_search_array = np.arange(search_inner_limit_modulus, search_outer_limit_modulus+0.1, 0.5)
 
 ra_peak_array = []
