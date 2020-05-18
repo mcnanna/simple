@@ -275,7 +275,7 @@ if (mode == 0):
     sig_peak_array = sig_peak_array[sig_peak_array > 0.] # Update the sig_peak_array last!
 
 for ii in range(0, len(sig_peak_array)):
-    print('{:0.2f} sigma; (RA, Dec, d) = ({:0.2f}, {:0.2f}); r = {:0.2f} deg; d = {:0.1f}, mu = {:0.2f} mag), mc_source_id: {:0.2f}'.format(sig_peak_array[ii], 
+    print('{:0.2f} sigma; (RA, Dec, d) = ({:0.2f}, {:0.2f}); r = {:0.3f} deg; d = {:0.1f}, mu = {:0.2f} mag), mc_source_id: {:0.2f}'.format(sig_peak_array[ii], 
                  ra_peak_array[ii], 
                  dec_peak_array[ii], 
                  r_peak_array[ii],

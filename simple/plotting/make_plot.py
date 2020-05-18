@@ -37,10 +37,10 @@ if not os.path.exists(save_dir):
 #################################################################
 
 try:
-    targ_ra, targ_dec, mod, sig, mc_source_id, field_density, = float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), float(sys.argv[5]), float(sys.argv[6]) 
+    targ_ra, targ_dec, r, mod, sig, n_obs, n_model, mc_source_id, field_density = float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7]), float(sys.argv[8]), float(sys.argv[9])
 except:
     try:
-        targ_ra, targ_dec, mod, sig, mc_source_id, = float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), float(sys.argv[5])
+        targ_ra, targ_dec, r, mod, sig, n_obs, n_model, mc_source_id = float(sys.argv[1]), float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7]), float(sys.argv[8])
         field_density = None
     except:
         sys.exit('ERROR! Coordinates not given in correct format.')
@@ -58,19 +58,21 @@ print('Making diagnostic plots for ({}, {}) = ({}, {})...'.format(basis_1, basis
 
 simple.plotting.diagnostic_plots.density_plot(axs[0][0], targ_ra, targ_dec, data, iso, g_radius, nbhd, 'stars')
 
-simple.plotting.diagnostic_plots.density_plot(axs[1][0], targ_ra, targ_dec, data, iso, g_radius, nbhd, 'galaxies')
+simple.plotting.diagnostic_plots.star_plot(axs[0][1], targ_ra, targ_dec, r, data, iso, g_radius, nbhd)
 
-simple.plotting.diagnostic_plots.density_plot(axs[2][0], targ_ra, targ_dec, data, iso, g_radius, nbhd, 'blue_stars')
+simple.plotting.diagnostic_plots.star_plot_aperture(axs[0][2], targ_ra, targ_dec, r, data, iso, g_radius, nbhd)
 
-simple.plotting.diagnostic_plots.cm_plot(axs[0][1], targ_ra, targ_dec, data, iso, g_radius, nbhd, 'stars')
+simple.plotting.diagnostic_plots.density_plot(axs[1][0], targ_ra, targ_dec, data, iso, g_radius, nbhd, 'blue_stars')
 
-simple.plotting.diagnostic_plots.cm_plot(axs[1][1], targ_ra, targ_dec, data, iso, g_radius, nbhd, 'galaxies')
+simple.plotting.diagnostic_plots.cm_plot(axs[1][1], targ_ra, targ_dec, data, iso, g_radius, nbhd, 'stars')
 
-simple.plotting.diagnostic_plots.hess_plot(axs[2][1], targ_ra, targ_dec, data, iso, g_radius, nbhd)
+simple.plotting.diagnostic_plots.hess_plot(axs[1][2], targ_ra, targ_dec, data, iso, g_radius, nbhd)
 
-simple.plotting.diagnostic_plots.star_plot(axs[0][2], targ_ra, targ_dec, data, iso, g_radius, nbhd)
+simple.plotting.diagnostic_plots.density_plot(axs[2][0], targ_ra, targ_dec, data, iso, g_radius, nbhd, 'galaxies')
 
-simple.plotting.diagnostic_plots.radial_plot(axs[1][2], targ_ra, targ_dec, data, iso, g_radius, nbhd, field_density)
+simple.plotting.diagnostic_plots.cm_plot(axs[2][1], targ_ra, targ_dec, data, iso, g_radius, nbhd, 'galaxies')
+
+simple.plotting.diagnostic_plots.radial_plot(axs[2][2], targ_ra, targ_dec, data, iso, g_radius, nbhd, field_density)
 
 # Name
 try: # ugali
@@ -92,8 +94,13 @@ except: # simple
 
 association_string = str(np.char.strip(association_string))
 association_string = repr(association_string)
+info_string = r'($\alpha$, $\delta$, $\mu$) = ({:0.2f}, {:0.2f}, {:0.2f})'.format(targ_ra, targ_dec, mod)
+detect_string = r'($\sigma$, $r$, n_obs, n_model) = ({:0.2f}, {:0.2f}, {:0.2f}, {:0.2f})'.format(sig, r*60, n_obs, n_model)
 
-plt.suptitle('{}\n'.format(association_string) + r'($\alpha$, $\delta$, $\mu$, $\sigma$, MC_SOURCE_ID) = ({:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.0f})'.format(targ_ra, targ_dec, mod, sig, mc_source_id), fontsize=24)
+plt.suptitle(association_string+'\n' + info_string+'\n' + detect_string, fontsize=24)
+
+#plt.suptitle('{}\n'.format(association_string) + r'($\alpha$, $\delta$, $\mu$) = ({:0.2f}, {:0.2f}, {:0.2f})'.format(targ_ra, targ_dec, mod), fontsize=24)
+#plt.suptitle('{}\n'.format(association_string) + r'($\sigma$, $r$, n_obs, n_model) = ({:0.2f}, {:0.2f}, {:0.2f}, {:0.2f})'.format(sig, r*60, n_obs, n_model), fontsize=24)
 
 file_name = 'candidate_{:0.2f}_{:0.2f}'.format(targ_ra, targ_dec)
 plt.savefig(save_dir+'/'+file_name+'.png',  bbox_inches='tight')

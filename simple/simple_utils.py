@@ -496,7 +496,8 @@ def fit_aperture(proj, distance_modulus, characteristic_density_local, x_peak, y
     n_obs_half_peak_array = []
     n_model_peak_array = []
             
-    size_array = np.concatenate((np.arange(0.001, 0.01, 0.001), np.arange(0.01, 0.3, 0.01)))
+    #size_array = np.concatenate((np.arange(0.001, 0.01, 0.001), np.arange(0.01, 0.3, 0.01)))
+    size_array = np.concatenate((np.arange(0.003, 0.01, 0.001), np.arange(0.01, 0.3, 0.01)))
     sig_array = np.tile(0., len(size_array))
     
     size_array_zero = np.concatenate([[0.], size_array])
