@@ -27,6 +27,7 @@ import matplotlib
 from matplotlib.colors import ListedColormap
 from matplotlib import mlab
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.patches import Circle
 
 import simple.filters
 import simple.simple_utils
@@ -122,14 +123,15 @@ def analysis(ra, dec, mod, mc_source_id):
     filter = simple.filters.star_filter(survey, data)
 
     iso_filter_gr = iso.cut_separation('g', 'r', data[mag_dered_1], data[mag_dered_2], data[mag_err_1], data[mag_err_2], radius=0.1)
-    iso_filter_ri = iso.cut_separation('r', 'i', data[mag_dered_2], data[mag_dered_3], data[mag_err_2], data[mag_err_3], radius=0.1) # Not used right now
+    iso_filter_ri = iso.cut_separation('r', 'i', data[mag_dered_2], data[mag_dered_3], data[mag_err_2], data[mag_err_3], radius=0.1)
+    iso_filter = iso_filter_gr & iso_filter_ri
 
     angsep = ugali.utils.projector.angsep(ra, dec, data[basis_1], data[basis_2])
 
     bins = np.linspace(0, 0.4, 21) # deg
     centers = 0.5*(bins[1:] + bins[0:-1])
     area = np.pi*(bins[1:]**2 - bins[0:-1]**2) * 60**2
-    hist = np.histogram(angsep[(angsep < 0.4) & filter & iso_filter_gr], bins=bins)[0] # counts
+    hist = np.histogram(angsep[(angsep < 0.4) & filter & iso_filter], bins=bins)[0] # counts
 
     f_interp = interpolate.interp1d(np.linspace(centers[0], centers[-1], len(hist)), hist/area, 'cubic')
     f_range = np.linspace(centers[0], centers[-1], 1000)
@@ -198,10 +200,12 @@ def density_plot(ax, ra, dec, data, iso, g_radius, nbhd, type):
         ax.text(0.05, 0.95, 'Blue stars', transform=ax.transAxes, verticalalignment='top')
     
     iso_filter_gr = iso.cut_separation('g', 'r', data[mag_dered_1], data[mag_dered_2], data[mag_err_1], data[mag_err_2], radius=0.1)
+    iso_filter_ri = iso.cut_separation('r', 'i', data[mag_dered_2], data[mag_dered_3], data[mag_err_2], data[mag_err_3], radius=0.1)
+    iso_filter = iso_filter_gr & iso_filter_ri
 
     # projection of image
     proj = ugali.utils.projector.Projector(ra, dec)
-    x, y = proj.sphereToImage(data[filter & iso_filter_gr][basis_1], data[filter & iso_filter_gr][basis_2])
+    x, y = proj.sphereToImage(data[filter & iso_filter][basis_1], data[filter & iso_filter][basis_2])
 
     bound = 0.5 #1.
     steps = 100.
@@ -220,24 +224,56 @@ def density_plot(ax, ra, dec, data, iso, g_radius, nbhd, type):
     cax = divider.append_axes('right', size = '5%', pad=0)
     plt.colorbar(pc, cax=cax, label='counts')
 
-def star_plot(ax, ra, dec, data, iso, g_radius, nbhd):
+def star_plot(ax, ra, dec, r, data, iso, g_radius, nbhd):
     """Star bin plot"""
 
     filter = simple.filters.star_filter(survey, data)
 
     iso_filter_gr = iso.cut_separation('g', 'r', data[mag_dered_1], data[mag_dered_2], data[mag_err_1], data[mag_err_2], radius=0.1)
+    iso_filter_ri = iso.cut_separation('r', 'i', data[mag_dered_2], data[mag_dered_3], data[mag_err_2], data[mag_err_3], radius=0.1)
+    iso_filter = iso_filter_gr & iso_filter_ri
 
     # projection of image
     proj = ugali.utils.projector.Projector(ra, dec)
-    x, y = proj.sphereToImage(data[filter & iso_filter_gr][basis_1], data[filter & iso_filter_gr][basis_2])
+    x, y = proj.sphereToImage(data[filter & iso_filter][basis_1], data[filter & iso_filter][basis_2])
 
     ax.scatter(x, y, edgecolor='none', s=3, c='black')
+
+    #aperture = Circle(xy=(0,0), radius=r, edgecolor='blue', linewidth=1.0, linestyle = '--', fill=False, zorder=10)
+    #ax.add_patch(aperture)
 
     ax.set_xlim(0.25, -0.25)
     ax.set_ylim(-0.25, 0.25)
     ax.set_xlabel(r'$\Delta$ RA (deg)')
     ax.set_ylabel(r'$\Delta$ Dec (deg)')
     #ax.set_title('Stars')
+    ax.text(0.05, 0.95, 'Stars', transform=ax.transAxes, verticalalignment='top')
+
+def star_plot_aperture(ax, ra, dec, r, data, iso, g_radius, nbhd):
+    """Zoomed star bin plot, with aperture"""
+
+    filter = simple.filters.star_filter(survey, data)
+
+    iso_filter_gr = iso.cut_separation('g', 'r', data[mag_dered_1], data[mag_dered_2], data[mag_err_1], data[mag_err_2], radius=0.1)
+    iso_filter_ri = iso.cut_separation('r', 'i', data[mag_dered_2], data[mag_dered_3], data[mag_err_2], data[mag_err_3], radius=0.1)
+    iso_filter = iso_filter_gr & iso_filter_ri
+
+    # projection of image
+    proj = ugali.utils.projector.Projector(ra, dec)
+    x, y = proj.sphereToImage(data[filter & iso_filter][basis_1], data[filter & iso_filter][basis_2])
+
+    dot_size = np.clip(3*(.05/r), 1, 6)
+    ax.scatter(x, y, edgecolor='none', s=dot_size, c='black')
+
+    aperture = Circle(xy=(0,0), radius=r, edgecolor='blue', linewidth=1.0, linestyle = '--', fill=False, zorder=10)
+    ax.add_patch(aperture)
+
+    ax.set_xlim(r*5, -r*5)
+    ax.set_ylim(-r*5, r*5)
+    ax.set_xlabel(r'$\Delta$ RA (deg)')
+    ax.set_ylabel(r'$\Delta$ Dec (deg)')
+    #ax.set_title('Stars')
+    ax.text(0.05, 0.95, 'Stars', transform=ax.transAxes, verticalalignment='top')
 
 def cm_plot(ax, ra, dec, data, iso, g_radius, nbhd, type):
     """Color-magnitude plot"""
@@ -255,6 +291,8 @@ def cm_plot(ax, ra, dec, data, iso, g_radius, nbhd, type):
         ax.text(0.05, 0.95, 'Galaxies', transform=ax.transAxes, verticalalignment='top')
 
     iso_filter_gr = iso.cut_separation('g', 'r', data[mag_dered_1], data[mag_dered_2], data[mag_err_1], data[mag_err_2], radius=0.1)
+    iso_filter_ri = iso.cut_separation('r', 'i', data[mag_dered_2], data[mag_dered_3], data[mag_err_2], data[mag_err_3], radius=0.1)
+    iso_filter = iso_filter_gr & iso_filter_ri
 
     # Plot background objects
     ax.scatter(data[mag_dered_1][filter & annulus] - data[mag_dered_2][filter & annulus], data[mag_dered_1][filter & annulus], c='k', alpha=0.1, edgecolor='none', s=1)
@@ -267,12 +305,12 @@ def cm_plot(ax, ra, dec, data, iso, g_radius, nbhd, type):
     ax.scatter(data[mag_dered_1][filter & nbhd] - data[mag_dered_2][filter & nbhd], data[mag_dered_1][filter & nbhd], c='g', s=5, label='r < {:.3f}$^\circ$'.format(g_radius))
 
     # Plot objects in nbhd and near isochrone
-    ax.scatter(data[mag_dered_1][filter & nbhd & iso_filter_gr] - data[mag_dered_2][filter & nbhd & iso_filter_gr], data[mag_dered_1][filter & nbhd & iso_filter_gr], c='r', s=5, label='$\Delta$CM < 0.1')
+    ax.scatter(data[mag_dered_1][filter & nbhd & iso_filter] - data[mag_dered_2][filter & nbhd & iso_filter], data[mag_dered_1][filter & nbhd & iso_filter], c='r', s=5, label='$\Delta$CM < 0.1')
 
-    ax.legend(loc='upper left')
+    ax.legend(loc='upper right')
 
     ax.set_xlim(-0.5, 1)
-    ax.set_ylim(max(mag_max), 16)
+    ax.set_ylim(max(mag_max)+1.0, 16)
     ax.set_xlabel('{} - {} (mag)'.format(band_1.lower(), band_2.lower()))
     ax.set_ylabel('{} (mag)'.format(band_1.lower()))
 
@@ -307,14 +345,15 @@ def hess_plot(ax, ra, dec, data, iso, g_radius, nbhd):
     signal = fg - bg
     signal = np.ma.array(signal, mask=np.isnan(mask_abs)) # mask nan
 
-    pc = ax.pcolormesh(xbins, ybins, signal, cmap=cmap_gray_mask)
-    #ugali.utils.plotting.drawIsochrone(iso, lw=2, c='k', zorder=10, label='Isocrhone')
-    iso.draw('g', 'r', lw=2, c='k', zorder=10, label='Isochrone')
-
     ax.set_xlim(-0.5, 1.0)
     ax.set_ylim(max(mag_max), 16)
     ax.set_xlabel('{} - {} (mag)'.format(band_1.lower(), band_2.lower()))
     ax.set_ylabel('{} (mag)'.format(band_1.lower()))
+
+    pc = ax.pcolormesh(xbins, ybins, signal, cmap=cmap_gray_mask)
+    #ugali.utils.plotting.drawIsochrone(iso, lw=2, c='k', zorder=10, label='Isocrhone')
+    ax.plot(iso.color, iso.mag_1 + iso.distance_modulus, lw=2, c='k', zorder=10, label='Isochrone')
+    #iso.draw('g', 'r', lw=2, c='k', zorder=10, label='Isochrone')
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size = '5%', pad=0)
@@ -334,6 +373,8 @@ def radial_plot(ax, ra, dec, data, iso, g_radius, nbhd, field_density=None):
     # Isochrone filtered/unfiltered
     iso_seln_gr_f = iso.cut_separation('g', 'r', data[mag_dered_1], data[mag_dered_2], data[mag_err_1], data[mag_err_2], radius=0.1)
     iso_seln_gr_u = ~iso_seln_gr_f
+    iso_seln_ri_f = iso.cut_separation('r', 'i', data[mag_dered_2], data[mag_dered_3], data[mag_err_2], data[mag_err_3], radius=0.1)
+    iso_seln_ri_u = ~iso_seln_ri_f
 
     bins = np.linspace(0, 0.4, 21) # deg
     centers = 0.5*(bins[1:] + bins[0:-1])
@@ -346,9 +387,9 @@ def radial_plot(ax, ra, dec, data, iso, g_radius, nbhd, field_density=None):
             filter = simple.filters.galaxy_filter(survey, data)
 
         if seln == 'f':
-            iso_filter = iso_seln_gr_f
+            iso_filter = iso_seln_gr_f & iso_seln_ri_f
         elif seln == 'u':
-            iso_filter = iso_seln_gr_u
+            iso_filter = iso_seln_gr_u & iso_seln_ri_u
 
         hist = np.histogram(angsep[(angsep < 0.4) & filter & iso_filter], bins=bins)[0] # counts
 
@@ -364,9 +405,9 @@ def radial_plot(ax, ra, dec, data, iso, g_radius, nbhd, field_density=None):
         elif type == 'galaxies':
             filter = simple.filters.galaxy_filter(survey, data)
         if seln == 'f':
-            iso_filter = iso_seln_gr_f
+            iso_filter = iso_seln_gr_f & iso_seln_ri_f
         elif seln == 'u':
-            iso_filter = iso_seln_gr_u
+            iso_filter = iso_seln_gr_u & iso_seln_ri_u
 
         hist = np.histogram(angsep[(angsep < 0.4) & filter & iso_filter], bins=bins)[0] # counts
 

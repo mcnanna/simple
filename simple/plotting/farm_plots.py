@@ -68,20 +68,23 @@ for candidate in candidate_list:
     ra      = round(candidate[basis_1], 2)
     dec     = round(candidate[basis_2], 2)
     mod     = round(candidate['MODULUS'], 2)
+    r       = round(candidate['R'], 3)
+    n_obs   = candidate['N_OBS']
     mc_source_id = round(candidate['MC_SOURCE_ID'], 2)
     if 'N_MODEL' in candidate_list.dtype.names:
+        n_model = candidate['N_MODEL']
         field_density = round(candidate['N_MODEL'] / (np.pi * (candidate['R'] * 60.)**2), 4) # field density (arcmin^-2)
     
     logfile = '{}/candidate_{}_{}.log'.format(log_dir, ra, dec)
     #batch = 'csub -n {} -o {} '.format(jobs, logfile)
     batch = 'csub -n {} -o {} --host all '.format(jobs, logfile) # testing condor updates
     if 'N_MODEL' in candidate_list.dtype.names:
-        command = 'python {}/plotting/make_plot.py {:0.2f} {:0.2f} {:0.2f} {:0.2f} {:0.2f} {:0.4f}'.format(simple_dir, ra, dec, mod, sig, mc_source_id, field_density)
+        command = 'python {}/plotting/make_plot.py {:0.2f} {:0.2f} {:0.3f} {:0.2f} {:0.2f} {} {} {:0.2f} {:0.4f}'.format(simple_dir, ra, dec, r, mod, sig, n_obs, n_model, mc_source_id, field_density)
     else:
-        command = 'python {}/plotting/make_plot.py {:0.2f} {:0.2f} {:0.2f} {:0.2f} {:0.2f}'.format(simple_dir, ra, dec, mod, sig, mc_source_id)
-    command_queue = command
+        command = 'python {}/plotting/make_plot.py {:0.2f} {:0.2f} {:0.3f} {:0.2f} {:0.2f} {} {:0.2f}'.format(simple_dir, ra, dec, r, mod, sig, n_obs, mc_source_id)
+    #command_queue = batch + command
 
-    #print(command)
-    #os.system(command)
-    print(command_queue)
-    os.system(command_queue) # Submit to queue
+    print(command)
+    os.system(command)
+    #print(command_queue)
+    #os.system(command_queue) # Submit to queue
