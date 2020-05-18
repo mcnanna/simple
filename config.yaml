@@ -4,7 +4,7 @@ setup:
 output:
     results_dir : 'results_dir'
     log_dir     : 'log_dir'
-    save_dir    : 'save_dir_skimtest'
+    save_dir    : 'save_dir_skimtest2'
 
 batch:
     jobs: 20 # <= 20 for DES cluster computers!
@@ -41,7 +41,7 @@ y6_gold_1_1:
     fracdet_gz: 'y6a1_griz_o.4096_t.32768_coverfoot_EQU.fits.gz'
     fracdet: 'y6a1_griz_o.4096_t.32768_coverfoot_EQU.fits'
 
-    candidate_list: 'skimtest.npy'
+    candidate_list: 'skimtest2.npy'
 
 y3_gold_2_0:
     mode : 1 # 0: real, 1: real+sim, 2: candidates
